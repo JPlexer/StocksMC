@@ -1,4 +1,0 @@
-- name: Creating a maven build
-  # You may pin to the exact commit or the version.
-  # uses: PrajjawalBanati/Java_Programs@1be3a1523ccf20176dc1ef458bcca0927e303fe3
-  uses: PrajjawalBanati/Java_Programs@0.0.1
