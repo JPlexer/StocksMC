@@ -2,8 +2,9 @@ name: Stocks
 version: 1.0
 author: [vicr123, JPlexer]
 main: omg.lol.jplexer.stocks.Stocks
+api-version: 1.16
 depend: [Vault]
 
 commands:
   stocks:
-    description: View/Purchase stocks
+    description: View/Sell stocks

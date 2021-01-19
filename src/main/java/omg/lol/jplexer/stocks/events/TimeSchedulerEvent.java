@@ -2,6 +2,7 @@ package omg.lol.jplexer.stocks.events;
 
 import omg.lol.jplexer.stocks.Stocks;
 import org.bukkit.World;
+import org.bukkit.configuration.file.FileConfiguration;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -13,7 +14,6 @@ public class TimeSchedulerEvent implements Runnable {
     Connection connection;
 
     long lastDay = -1;
-
     public TimeSchedulerEvent(Stocks plugin) {
         this.plugin = plugin;
         connection = plugin.getDatabase();
@@ -33,7 +33,7 @@ public class TimeSchedulerEvent implements Runnable {
     public void run() {
         World world = plugin.getServer().getWorld("world");
         long currentDay = world.getFullTime() / 24000;
-        if (currentDay != lastDay) iterateStocks();
+        if (currentDay != lastDay && plugin.getConfig().getBoolean("autoiterate")) iterateStocks();
     }
 
     void iterateStocks() {

@@ -34,6 +34,12 @@ public class Stocks extends JavaPlugin {
                             "\\___ |  | |  | \\_/||  \\_ |   \\ \\___ |\n" +
                             "\\____/  \\_/  \\____/\\____/\\_|\\_\\\\____/");
         this.getServer().getScheduler().runTaskTimer(this, new TimeSchedulerEvent(this), 0, 200);
+        this.getConfig().addDefault("stockitem", "EMERALD");
+        this.getConfig().addDefault("autoiterate", true);
+        this.getConfig().addDefault("buypriceon", false);
+        this.getConfig().addDefault("sellpriceon", false);
+        this.getConfig().options().copyDefaults(true);
+        saveConfig();
         this.getCommand("stocks").setExecutor(new StocksCommand(this));
     }
 
@@ -57,9 +63,7 @@ public class Stocks extends JavaPlugin {
         this.currentSeed = seed;
     }
 
-    public Float currentSeed() {
-        return this.currentSeed;
-    }
+    public Float currentSeed() { return this.currentSeed; }
 
     public int getBuyPrice() {
         return getBuyPrice(this.currentSeed);

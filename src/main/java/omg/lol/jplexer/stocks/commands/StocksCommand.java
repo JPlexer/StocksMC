@@ -6,12 +6,12 @@ import org.bukkit.Material;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
-import net.milkbowl.vault.economy.Economy;
-
-import javax.swing.*;
+import org.bukkit.inventory.meta.ItemMeta;
+import net.milkbowl.vault.permission.Permission;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -20,10 +20,11 @@ import java.util.HashMap;
 
 public class StocksCommand implements CommandExecutor {
     Stocks plugin;
+    FileConfiguration config;
     Connection connection;
     public StocksCommand(Stocks plugin) {
         this.plugin = plugin;
-
+        config = plugin.getConfig();
         connection = plugin.getDatabase();
     }
 
@@ -45,8 +46,14 @@ public class StocksCommand implements CommandExecutor {
                 case "sell":
                     sellStocks(commandSender, strings);
                     return true;
+                case "change-item":
+                    changeItem(commandSender);
+                    return true;
+                case "auto":
+                    changeAuto(commandSender, strings);
+                    return true;
                 default:
-                    commandSender.sendMessage(ChatColor.RED + "Sorry, \"" + strings[0] + "\" is not a valid verb. You can use view, buy or sell.");
+                    commandSender.sendMessage(ChatColor.RED + "Sorry, \"" + strings[0] + "\" is not a valid verb. You can use view, buy or sell (or as an Admin: auto or change-item).");
                     return true;
             }
         } catch (SQLException exception) {
@@ -92,6 +99,58 @@ public class StocksCommand implements CommandExecutor {
             }
         }
     }
+    void changeItem(CommandSender commandSender) throws SQLException {
+        if (!(commandSender instanceof Player)) {
+            commandSender.sendMessage(ChatColor.RED + "Sorry, only players can participate in the stock market.");
+            return;
+        }
+        if(commandSender.hasPermission("stocks.jplexer.changeItem")) {
+            PlayerInventory inventory = ((Player) commandSender).getInventory();
+            config.set("stockitem", inventory.getItemInMainHand().getType().toString());
+            config.set("stockitemdata",inventory.getItemInMainHand().getItemMeta());
+            plugin.saveConfig();
+            commandSender.sendMessage(ChatColor.RED + "Stock Item changed to " + inventory.getItemInMainHand().getType().toString());
+        } else {
+            commandSender.sendMessage(ChatColor.RED + "Sorry, only Admins can use this.");
+            return;}
+
+    }
+
+    void changeAuto(CommandSender commandSender, String[] strings) throws SQLException {
+        if (!(commandSender instanceof Player)) {
+            commandSender.sendMessage(ChatColor.RED + "Sorry, only players can participate in the stock market.");
+            return;
+        }
+        if(strings[1].length() == 0) {
+            commandSender.sendMessage("Please specify if you want to change the **buy** or **sell** Price");
+            return;
+        }
+        if(commandSender.hasPermission("stocks.jplexer.changeAuto")) {
+            if("on".equals(strings[1])) {
+                if(config.getBoolean("autoiterate")) {
+                    commandSender.sendMessage("Auto Iteration is already enabled");
+                    return;
+                }
+                config.set("autoiterate", true);
+                commandSender.sendMessage("Auto Iteration has been enabled");
+            }
+            else if("off".equals(strings[1])) {
+                if(!config.getBoolean("autoiterate")) {
+                    commandSender.sendMessage("Auto Iteration is already diabled");
+                    return;
+                }
+                config.set("autoiterate", false);
+                config.set("buypriceon", false);
+                config.set("sellpriceon", false);
+                commandSender.sendMessage("Auto Iteration has been disabled");
+            } else {
+                commandSender.sendMessage("Please Specify if you want to turn Auto Iteration **on** or **off**");
+            }
+        } else {
+            commandSender.sendMessage(ChatColor.RED + "Sorry, only Admins can use this.");
+            return;}
+
+    }
 
     void buyStocks(CommandSender commandSender, String[] strings) throws SQLException {
         if (!(commandSender instanceof Player)) {
@@ -100,7 +159,7 @@ public class StocksCommand implements CommandExecutor {
         }
 
         if (strings.length != 2) {
-            commandSender.sendMessage("Buy some emeralds from the stock market");
+            commandSender.sendMessage("Buy some Stocks from the stock market");
             commandSender.sendMessage("Usage: /stocks buy (amount)");
             return;
         }
@@ -110,7 +169,7 @@ public class StocksCommand implements CommandExecutor {
             amount = Integer.parseInt(strings[1]);
             if (amount <= 0) throw new NumberFormatException();
         } catch (NumberFormatException e) {
-            commandSender.sendMessage(ChatColor.RED + "Enter a valid amount of emeralds to purchase from the stock market.");
+            commandSender.sendMessage(ChatColor.RED + "Enter a valid amount of Stocks to purchase from the stock market.");
             return;
         }
 
@@ -125,7 +184,8 @@ public class StocksCommand implements CommandExecutor {
             return;
         }
 
-        ItemStack itemStack = new ItemStack(Material.EMERALD, amount);
+        ItemStack itemStack = new ItemStack(Material.getMaterial(config.getString("stockitem")), amount);
+        itemStack.setItemMeta((ItemMeta) config.get("stockitemdata"));
         PlayerInventory inventory = ((Player) commandSender).getInventory();
         HashMap<Integer, ItemStack> results = inventory.addItem(itemStack);
         if (results.size() != 0) {
@@ -143,7 +203,7 @@ public class StocksCommand implements CommandExecutor {
             commandSender.sendMessage(ChatColor.GREEN + "Thanks for your purchase!");
             commandSender.sendMessage(ChatColor.GREEN + "Buy rate: " + Stocks.getDollarValue(buyPrice) + " ea.");
             commandSender.sendMessage(ChatColor.GREEN + "Purchase Price: " + Stocks.getDollarValue(totalPrice));
-            commandSender.sendMessage(ChatColor.GREEN + "Emeralds Traded: " + amount + " emeralds");
+            commandSender.sendMessage(ChatColor.GREEN + "Stocks Traded: " + amount + " stocks");
 
     }
 
@@ -154,7 +214,7 @@ public class StocksCommand implements CommandExecutor {
         }
 
         if (strings.length != 2) {
-            commandSender.sendMessage("Sell some emeralds to the stock market");
+            commandSender.sendMessage("Sell stocks to the stock market");
             commandSender.sendMessage("Usage: /stocks sell (amount)");
             return;
         }
@@ -164,14 +224,15 @@ public class StocksCommand implements CommandExecutor {
             amount = Integer.parseInt(strings[1]);
             if (amount <= 0) throw new NumberFormatException();
         } catch (NumberFormatException e) {
-            commandSender.sendMessage(ChatColor.RED + "Enter a valid amount of emeralds to sell to the stock market.");
+            commandSender.sendMessage(ChatColor.RED + "Enter a valid amount of Stocks to sell to the stock market.");
             return;
         }
 
         int sellPrice = plugin.getSellPrice();
         int totalPrice = sellPrice * amount;
 
-        ItemStack itemStack = new ItemStack(Material.EMERALD, amount);
+        ItemStack itemStack = new ItemStack(Material.getMaterial(config.getString("stockitem")), amount);
+        itemStack.setItemMeta((ItemMeta) config.get("stockitemdata"));
         PlayerInventory inventory = ((Player) commandSender).getInventory();
         HashMap<Integer, ItemStack> results = inventory.removeItem(itemStack);
         if (results.size() != 0) {
@@ -180,7 +241,7 @@ public class StocksCommand implements CommandExecutor {
             remaining.setAmount(amount - remaining.getAmount());
             inventory.addItem(remaining);
 
-            commandSender.sendMessage(ChatColor.RED + "Sorry, you don't have enough emeralds to complete that purchase.");
+            commandSender.sendMessage(ChatColor.RED + "Sorry, you don't have enough Stocks to complete that purchase.");
             return;
         }
         double totalPriceD = (double) totalPrice / 100 ;
@@ -188,6 +249,6 @@ public class StocksCommand implements CommandExecutor {
         commandSender.sendMessage(ChatColor.GREEN + "Thanks for your trade!");
         commandSender.sendMessage(ChatColor.GREEN + "Sell rate: " + Stocks.getDollarValue(sellPrice) + " ea.");
         commandSender.sendMessage(ChatColor.GREEN + "Total Price: " + Stocks.getDollarValue(totalPrice));
-        commandSender.sendMessage(ChatColor.GREEN + "Emeralds Traded: " + amount + " emeralds");
+        commandSender.sendMessage(ChatColor.GREEN + "Stocks Traded: " + amount + " stocks");
     }
 }
