@@ -1,6 +1,6 @@
 name: Stocks
 version: 1.0
-author: JPlexer
+author: [vicr123, JPlexer]
 main: omg.lol.jplexer.stocks.Stocks
 depend: [Vault]
 
