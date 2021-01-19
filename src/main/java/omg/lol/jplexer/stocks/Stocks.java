@@ -33,7 +33,6 @@ public class Stocks extends JavaPlugin {
                             "|    \\  / \\  | / \\||  /  |   / |    \\\n" +
                             "\\___ |  | |  | \\_/||  \\_ |   \\ \\___ |\n" +
                             "\\____/  \\_/  \\____/\\____/\\_|\\_\\\\____/");
-        System.out.println("Stocks Loaded");
         this.getServer().getScheduler().runTaskTimer(this, new TimeSchedulerEvent(this), 0, 200);
         this.getCommand("stocks").setExecutor(new StocksCommand(this));
     }
