@@ -1,17 +1,16 @@
-package com.vicr123.bnbmc.emeraldstocks;
+package omg.lol.jplexer.stocks;
 
-import com.vicr123.bnbmc.emeraldstocks.commands.StocksCommand;
-import com.vicr123.bnbmc.emeraldstocks.events.TimeSchedulerEvent;
+import net.milkbowl.vault.economy.Economy;
+import omg.lol.jplexer.stocks.commands.StocksCommand;
+import omg.lol.jplexer.stocks.events.TimeSchedulerEvent;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.bukkit.scheduler.BukkitScheduler;
-import tech.cheating.chaireco.IEconomy;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 
-public class EmeraldStocks extends JavaPlugin {
-    IEconomy economy;
+public class Stocks extends JavaPlugin {
+    public Economy economy;
     Connection connection;
 
     Float currentSeed = null;
@@ -27,16 +26,21 @@ public class EmeraldStocks extends JavaPlugin {
 
     @Override
     public void onEnable() {
-        economy = this.getServer().getServicesManager().getRegistration(IEconomy.class).getProvider();
+        economy = this.getServer().getServicesManager().getRegistration(Economy.class).getProvider();
         prepareDatabase();
-
+        System.out.println(" ____  _____  ____  ____  _  __ ____ \n" +
+                            "/ ___\\/__ __\\/  _ \\/   _\\/ |/ // ___\\\n" +
+                            "|    \\  / \\  | / \\||  /  |   / |    \\\n" +
+                            "\\___ |  | |  | \\_/||  \\_ |   \\ \\___ |\n" +
+                            "\\____/  \\_/  \\____/\\____/\\_|\\_\\\\____/");
+        System.out.println("Stocks Loaded");
         this.getServer().getScheduler().runTaskTimer(this, new TimeSchedulerEvent(this), 0, 200);
         this.getCommand("stocks").setExecutor(new StocksCommand(this));
     }
 
     private void prepareDatabase() {
         try {
-            this.connection = DriverManager.getConnection("jdbc:sqlite:emeraldstocks.db");
+            this.connection = DriverManager.getConnection("jdbc:sqlite:stocks.db");
             this.connection.createStatement().execute("PRAGMA foreign_keys=ON");
             this.connection.createStatement().execute("CREATE TABLE IF NOT EXISTS lastDay(day INTEGER PRIMARY KEY)");
             this.connection.createStatement().execute("CREATE TABLE IF NOT EXISTS stockPrices(id INTEGER PRIMARY KEY AUTOINCREMENT, seed FLOAT)");
@@ -48,10 +52,7 @@ public class EmeraldStocks extends JavaPlugin {
     public Connection getDatabase() {
         return connection;
     }
-
-    public IEconomy getEconomy() {
-        return economy;
-    }
+    public static String getDollarValue(int cents) { return (cents < 0 ? "-" : "") + "$" + Math.abs(cents / 100) + "." + String.format("%02d", Math.abs(cents % 100)); }
 
     public void setCurrentSeed(float seed) {
         this.currentSeed = seed;

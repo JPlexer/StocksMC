@@ -1,6 +1,6 @@
-package com.vicr123.bnbmc.emeraldstocks.events;
+package omg.lol.jplexer.stocks.events;
 
-import com.vicr123.bnbmc.emeraldstocks.EmeraldStocks;
+import omg.lol.jplexer.stocks.Stocks;
 import org.bukkit.World;
 
 import java.sql.Connection;
@@ -9,12 +9,12 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 public class TimeSchedulerEvent implements Runnable {
-    EmeraldStocks plugin;
+    Stocks plugin;
     Connection connection;
 
     long lastDay = -1;
 
-    public TimeSchedulerEvent(EmeraldStocks plugin) {
+    public TimeSchedulerEvent(Stocks plugin) {
         this.plugin = plugin;
         connection = plugin.getDatabase();
 
