@@ -36,8 +36,9 @@ public class Stocks extends JavaPlugin {
         this.getServer().getScheduler().runTaskTimer(this, new TimeSchedulerEvent(this), 0, 200);
         this.getConfig().addDefault("stockitem", "EMERALD");
         this.getConfig().addDefault("autoiterate", true);
-        this.getConfig().addDefault("buypriceon", false);
-        this.getConfig().addDefault("sellpriceon", false);
+        this.getConfig().addDefault("priceon", false);
+        this.getConfig().addDefault("pricejustset", false);
+        this.getConfig().addDefault("maintenance", false);
         this.getConfig().options().copyDefaults(true);
         saveConfig();
         this.getCommand("stocks").setExecutor(new StocksCommand(this));
@@ -66,10 +67,16 @@ public class Stocks extends JavaPlugin {
     public Float currentSeed() { return this.currentSeed; }
 
     public int getBuyPrice() {
+        if(this.getConfig().getBoolean("priceon")) {
+            return getBuyPrice((float) getConfig().get("seed"));
+        }
         return getBuyPrice(this.currentSeed);
     }
 
     public int getSellPrice() {
+        if(this.getConfig().getBoolean("priceon")) {
+            return getSellPrice((float) getConfig().get("seed"));
+        }
         return getSellPrice(this.currentSeed);
     }
 

@@ -52,8 +52,14 @@ public class StocksCommand implements CommandExecutor {
                 case "auto":
                     changeAuto(commandSender, strings);
                     return true;
+                case "price":
+                    changePrice(commandSender, strings);
+                    return true;
+                case "maintain":
+                    maintenanceMode(commandSender);
+                    return true;
                 default:
-                    commandSender.sendMessage(ChatColor.RED + "Sorry, \"" + strings[0] + "\" is not a valid verb. You can use view, buy or sell (or as an Admin: auto or change-item).");
+                    commandSender.sendMessage(ChatColor.RED + "Sorry, \"" + strings[0] + "\" is not a valid verb. You can use view, buy or sell (or as an Admin: maintain and then auto, price or change-item).");
                     return true;
             }
         } catch (SQLException exception) {
@@ -63,6 +69,10 @@ public class StocksCommand implements CommandExecutor {
     }
 
     void viewStocks(CommandSender commandSender) throws SQLException {
+        if(config.getBoolean("maintenance")) {
+            commandSender.sendMessage("Stocks are in Maintenance Mode! Please try again later");
+            return;
+        }
         ArrayList<Float> seeds = new ArrayList<Float>();
         ResultSet results = connection.createStatement().executeQuery("SELECT seed FROM stockPrices ORDER BY id DESC LIMIT 5");
         while (results.next()) {
@@ -99,39 +109,97 @@ public class StocksCommand implements CommandExecutor {
             }
         }
     }
+
     void changeItem(CommandSender commandSender) throws SQLException {
         if (!(commandSender instanceof Player)) {
             commandSender.sendMessage(ChatColor.RED + "Sorry, only players can participate in the stock market.");
             return;
         }
         if(commandSender.hasPermission("stocks.jplexer.changeItem")) {
+            if(!config.getBoolean("maintenance")) {
+                commandSender.sendMessage(ChatColor.YELLOW + "Please turn maintenance mode on!");
+                return;
+            }
             PlayerInventory inventory = ((Player) commandSender).getInventory();
             config.set("stockitem", inventory.getItemInMainHand().getType().toString());
             config.set("stockitemdata",inventory.getItemInMainHand().getItemMeta());
             plugin.saveConfig();
-            commandSender.sendMessage(ChatColor.RED + "Stock Item changed to " + inventory.getItemInMainHand().getType().toString());
+            commandSender.sendMessage(ChatColor.GREEN + "Stock Item changed to " + inventory.getItemInMainHand().getType().toString());
+        } else {
+            commandSender.sendMessage(ChatColor.RED + "Sorry, only Admins can use this.");
+            return;}
+
+    }
+    void maintenanceMode(CommandSender commandSender) throws SQLException {
+
+        if(commandSender.hasPermission("stocks.jplexer.maintenance")) {
+            if(config.getBoolean("maintenance")) {
+                config.set("maintenance", false);
+                plugin.saveConfig();
+                commandSender.sendMessage(ChatColor.GREEN +"Stocks are back!");
+                return;
+            }
+            config.set("maintenance", true);
+            plugin.saveConfig();
+            commandSender.sendMessage(ChatColor.YELLOW +"Stocks are now in Maintenance mode!");
+            return;
         } else {
             commandSender.sendMessage(ChatColor.RED + "Sorry, only Admins can use this.");
             return;}
 
     }
 
+    void changePrice(CommandSender commandSender, String[] strings) throws SQLException {
+        if (!(commandSender instanceof Player)) {
+            commandSender.sendMessage(ChatColor.RED + "Sorry, only players can participate in the stock market.");
+            return;
+        }
+
+        if(commandSender.hasPermission("stocks.jplexer.changePrice")) {
+            if(!config.getBoolean("maintenance")) {
+                commandSender.sendMessage(ChatColor.YELLOW +"Please turn maintenance mode on!");
+                return;
+            }
+            if(strings.length != 2) {
+                commandSender.sendMessage(ChatColor.YELLOW +"Please tell me the buy price in Cents.");
+                return;
+            }
+                if(config.getBoolean("autoiterate")) {
+                    commandSender.sendMessage(ChatColor.YELLOW +"You probably want to turn Auto Iterations off.");
+                    return;
+                }
+                config.set("priceon", true);
+                config.set("seed", (Float.parseFloat(strings[1]) - 100) / 7500);
+                config.set("pricejustset", true);
+                plugin.saveConfig();
+                commandSender.sendMessage("Buy Price has been changed to " + strings[1] + " cents and Sell Price has been auto Generated");
+
+        } else {
+            commandSender.sendMessage(ChatColor.RED + "Sorry, only Admins can use this.");
+            return;}
+
+    }
     void changeAuto(CommandSender commandSender, String[] strings) throws SQLException {
         if (!(commandSender instanceof Player)) {
             commandSender.sendMessage(ChatColor.RED + "Sorry, only players can participate in the stock market.");
             return;
         }
-        if(strings[1].length() == 0) {
-            commandSender.sendMessage("Please specify if you want to change the **buy** or **sell** Price");
-            return;
-        }
         if(commandSender.hasPermission("stocks.jplexer.changeAuto")) {
+            if(!config.getBoolean("maintenance")) {
+                commandSender.sendMessage(ChatColor.YELLOW +"Please turn maintenance mode on!");
+                return;
+            }
+            if(strings.length != 2) {
+                commandSender.sendMessage("Please Specify if you want to turn Auto Iteration **on** or **off**");
+                return;
+            }
             if("on".equals(strings[1])) {
                 if(config.getBoolean("autoiterate")) {
                     commandSender.sendMessage("Auto Iteration is already enabled");
                     return;
                 }
                 config.set("autoiterate", true);
+                plugin.saveConfig();
                 commandSender.sendMessage("Auto Iteration has been enabled");
             }
             else if("off".equals(strings[1])) {
@@ -142,9 +210,11 @@ public class StocksCommand implements CommandExecutor {
                 config.set("autoiterate", false);
                 config.set("buypriceon", false);
                 config.set("sellpriceon", false);
+                plugin.saveConfig();
                 commandSender.sendMessage("Auto Iteration has been disabled");
             } else {
                 commandSender.sendMessage("Please Specify if you want to turn Auto Iteration **on** or **off**");
+                return;
             }
         } else {
             commandSender.sendMessage(ChatColor.RED + "Sorry, only Admins can use this.");
@@ -161,6 +231,10 @@ public class StocksCommand implements CommandExecutor {
         if (strings.length != 2) {
             commandSender.sendMessage("Buy some Stocks from the stock market");
             commandSender.sendMessage("Usage: /stocks buy (amount)");
+            return;
+        }
+        if(config.getBoolean("maintenance")) {
+            commandSender.sendMessage("Stocks are in Maintenance Mode! Please try again later");
             return;
         }
 
@@ -218,7 +292,10 @@ public class StocksCommand implements CommandExecutor {
             commandSender.sendMessage("Usage: /stocks sell (amount)");
             return;
         }
-
+        if(config.getBoolean("maintenance")) {
+            commandSender.sendMessage("Stocks are in Maintenance Mode! Please try again later");
+            return;
+        }
         int amount;
         try {
             amount = Integer.parseInt(strings[1]);

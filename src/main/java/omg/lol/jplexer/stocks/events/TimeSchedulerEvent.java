@@ -34,6 +34,7 @@ public class TimeSchedulerEvent implements Runnable {
         World world = plugin.getServer().getWorld("world");
         long currentDay = world.getFullTime() / 24000;
         if (currentDay != lastDay && plugin.getConfig().getBoolean("autoiterate")) iterateStocks();
+        if (plugin.getConfig().getBoolean("pricejustset")) iterateStocksNew();
     }
 
     void iterateStocks() {
@@ -62,6 +63,37 @@ public class TimeSchedulerEvent implements Runnable {
             statement.executeUpdate();
 
             plugin.setCurrentSeed(newSeed);
+            writeLastDay();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+    void iterateStocksNew() {
+        try {
+            World world = plugin.getServer().getWorld("world");
+            lastDay = world.getFullTime() / 24000;
+
+            //Add a new entry to the stock market
+            Float lastSeed = plugin.currentSeed();
+            if (lastSeed == null) {
+                //Only bother the database if we're starting up
+                ResultSet results = connection.createStatement().executeQuery("SELECT seed FROM stockPrices ORDER BY id DESC LIMIT 1");
+                if (results.next()) {
+                    lastSeed = results.getFloat("seed");
+                } else {
+                    lastSeed = 0.5f;
+                }
+            }
+
+            float newSeed = (float) plugin.getConfig().get("seed");
+
+            PreparedStatement statement = connection.prepareStatement("INSERT INTO stockPrices(seed) VALUES(?)");
+            statement.setFloat(1, newSeed);
+            statement.executeUpdate();
+
+            plugin.setCurrentSeed(newSeed);
+            plugin.getConfig().set("pricejustset", false);
+            plugin.saveConfig();
             writeLastDay();
         } catch (SQLException e) {
             e.printStackTrace();
