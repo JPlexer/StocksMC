@@ -199,6 +199,7 @@ public class StocksCommand implements CommandExecutor {
                     return;
                 }
                 config.set("autoiterate", true);
+                config.set("priceon", false);
                 plugin.saveConfig();
                 commandSender.sendMessage("Auto Iteration has been enabled");
             }
@@ -208,8 +209,6 @@ public class StocksCommand implements CommandExecutor {
                     return;
                 }
                 config.set("autoiterate", false);
-                config.set("buypriceon", false);
-                config.set("sellpriceon", false);
                 plugin.saveConfig();
                 commandSender.sendMessage("Auto Iteration has been disabled");
             } else {
