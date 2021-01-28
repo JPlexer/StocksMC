@@ -54,9 +54,9 @@ public class TimeSchedulerEvent implements Runnable {
                 }
             }
 
-            float newSeed = (float) ((Math.random() / 10) - 0.05 + lastSeed);
+            float newSeed = (float) ((Math.random() / 10) - 0.02 + lastSeed);
             if (newSeed < 0.12) newSeed = (float) 0.12;
-            if (newSeed > 1) newSeed = 1;
+            if (newSeed > 2.65) newSeed = (float) 2.65;
 
             PreparedStatement statement = connection.prepareStatement("INSERT INTO stockPrices(seed) VALUES(?)");
             statement.setFloat(1, newSeed);
