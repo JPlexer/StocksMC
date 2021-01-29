@@ -54,7 +54,7 @@ public class TimeSchedulerEvent implements Runnable {
                 }
             }
 
-            float newSeed = (float) ((Math.random() / 10) - 0.02 + lastSeed);
+            float newSeed = (float) ((Math.random() / 10) - 0.05 + lastSeed);
             if (newSeed < 0.12) newSeed = (float) 0.12;
             if (newSeed > 2.65) newSeed = (float) 2.65;
 
